@@ -43,15 +43,14 @@ function loadZip (file, buf) {
 }
 
 function addGeoJSON (data) {
-  loop.state.overlays.push({ type: 'geojson', data: data })
-  loop.update(loop.state)
+  console.log(data)
 }
 
 var clear = glclear({ color: [0.15, 0.08, 0.10, 1.0] })
 var vdom = require('virtual-dom')
 var h = require('virtual-hyperscript-hook')(vdom.h)
 
-var gl, complexes = {}, meshCache = {}
+var gl, canvas, complexes = {}, meshCache = {}
 
 var main = require('main-loop')
 var loop = main({
@@ -84,10 +83,13 @@ function render (state) {
     h('canvas.gl', {
       width: state.width,
       height: state.height,
-      hook: function (canvas) {
-        gl = canvas.getContext('webgl')
-        ongl(gl, state)
-        draw(gl, state)
+      hook: function (canvasElem) {
+        if (canvas !== canvasElem) {
+          canvas = canvasElem
+          gl = canvas.getContext('webgl')
+          ongl(gl, state)
+          draw(gl, state)
+        } else draw(gl, state)
       }
     })
   ])
@@ -120,7 +122,6 @@ function createEarth () {
 }
 
 function ongl (gl, state) {
-  complexes = {}
   Object.keys(state.meshes).forEach(function (key) {
     if (meshCache[key] !== state.meshes[key]) {
       complexes[key] = complex(gl, state.meshes[key])
