@@ -10,6 +10,7 @@
   "author": "",
   "license": "BSD",
   "dependencies": {
+    "drag-and-drop-files": "0.0.1",
     "geodetic-to-ecef": "^1.2.0",
     "gl-buffer": "^2.1.2",
     "gl-clear": "^2.0.0",
@@ -20,9 +21,11 @@
     "lookat-camera": "^1.0.0",
     "main-loop": "^3.2.0",
     "primitive-sphere": "^2.0.0",
+    "shapefile2geojson": "^1.0.6",
     "virtual-dom": "^2.1.1",
     "virtual-hyperscript-hook": "^1.0.0",
     "wgs84": "0.0.0",
-    "xtend": "^4.0.1"
+    "xtend": "^4.0.1",
+    "zip": "^1.2.0"
   }
 }
