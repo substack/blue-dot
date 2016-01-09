@@ -127,6 +127,9 @@ function ongl (gl, state) {
       meshCache[key] = state.meshes[key]
     }
   })
+  Object.keys(complexes).forEach(function (key) {
+    if (!state.meshes[key]) delete complexes[key]
+  })
 }
 
 function draw (gl, state) {
