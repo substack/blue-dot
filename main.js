@@ -4,7 +4,7 @@ var glBuffer = require('gl-buffer')
 var complex = require('gl-simplicial-complex')
 var sphere = require('primitive-sphere')
 
-var ecef = require('geodetic-to-ecef')
+var gecef = require('geodetic-to-ecef')
 var wgs84 = require('wgs84')
 var xtend = require('xtend')
 
@@ -49,23 +49,34 @@ function render (state) {
 
 var gl, earth
 function ongl (gl) {
-  var mesh = sphere(1)
+  var pos = [], cells = [], colors = [], normals = []
+  pos.push([0,0,0])
+  colors.push([0,1,1])
+  normals.push([0,0,-1])
+  for (var i = 0; i < 128; i++) {
+    var lat0 = Math.sin(i/128*2*Math.PI) * 180
+    var lon0 = 90
+    var lat1 = Math.sin((i-1)/128*2*Math.PI) * 180
+    var lon1 = 90
+    pos.push(ecef(lat0, lon0))
+    pos.push(ecef(lat1, lon1))
+    colors.push([0,0.5,1])
+    colors.push([0,0.5,1])
+    cells.push([0,i*2+1,i*2+2])
+    normals.push([0,0,-1])
+    normals.push([0,0,-1])
+  }
   var edges = []
-  mesh.cells.forEach(function (cell) {
+  cells.forEach(function (cell) {
     edges.push([cell[0],cell[1]])
     edges.push([cell[1],cell[2]])
     edges.push([cell[2],cell[0]])
   }),
   earth = complex(gl, {
-    cells: edges,
-    positions: mesh.positions.map(function (pt) {
-      var lat = Math.asin(pt[0])*180/Math.PI
-      var lon = Math.atan2(pt[1],pt[2])*180/Math.PI
-      var xyz = ecef(lat, lon, 0)
-      xyz[0] /= 1e3; xyz[1] /= 1e3; xyz[2] /= 1e3
-      return xyz
-    }),
-    meshColor: [0,1,0]
+    cells: cells,
+    vertexColors: colors,
+    vertexNormals: normals,
+    positions: pos
   })
 }
 
@@ -79,4 +90,14 @@ function draw (gl, state) {
     projection: mat4.perspective(
       mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10)
   })
+}
+
+function ecef (lat, lon, elev) {
+  var xyz = gecef(lat, lon, elev)
+  var x = xyz[0] / 1e3
+  var y = xyz[1] / 1e3
+  xyz[0] = y
+  xyz[1] = xyz[2] / 1e3
+  xyz[2] = x
+  return xyz
 }
