@@ -4,6 +4,7 @@ var glBuffer = require('gl-buffer')
 var complex = require('gl-simplicial-complex')
 var sphere = require('primitive-sphere')
 
+var ecef = require('geodetic-to-ecef')
 var wgs84 = require('wgs84')
 var xtend = require('xtend')
 
@@ -48,7 +49,7 @@ function render (state) {
 
 var gl, earth
 function ongl (gl) {
-  var mesh = sphere(wgs84.RADIUS/1e3)
+  var mesh = sphere(1)
   var edges = []
   mesh.cells.forEach(function (cell) {
     edges.push([cell[0],cell[1]])
@@ -57,7 +58,13 @@ function ongl (gl) {
   }),
   earth = complex(gl, {
     cells: edges,
-    positions: mesh.positions,
+    positions: mesh.positions.map(function (pt) {
+      var lat = Math.asin(pt[0])*180/Math.PI
+      var lon = Math.atan2(pt[1],pt[2])*180/Math.PI
+      var xyz = ecef(lat, lon, 0)
+      xyz[0] /= 1e3; xyz[1] /= 1e3; xyz[2] /= 1e3
+      return xyz
+    }),
     meshColor: [0,1,0]
   })
 }
