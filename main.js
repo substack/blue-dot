@@ -38,12 +38,31 @@ function loadZip (file, buf) {
   })
   if (dbf && shp) {
     var data = shp2json(shp.getData(), dbf.getData())
-    addGeoJSON(data)
+    addGeoJSON(file.name, data)
   }
 }
 
-function addGeoJSON (data) {
-  console.log(data)
+function addGeoJSON (name, data) {
+  var mesh = { cells: [], positions: [], vertexColors: [] }
+  data.features.forEach(function (feature) {
+    if (feature.geometry.type === 'MultiLineString') {
+      feature.geometry.coordinates.forEach(function (pts) {
+        var len = mesh.positions.length
+        for (var i = 1; i < pts.length; i++) {
+          mesh.cells.push([ len + i - 1, len + i ])
+        }
+        for (var i = 0; i < pts.length; i++) {
+          mesh.positions.push(ecef(pts[i][0], pts[i][1], 0))
+          mesh.vertexColors.push([0,1,0])
+        }
+      })
+    }
+  })
+  var meshes = {}
+  meshes[name] = mesh
+  loop.update(xtend(loop.state, {
+    meshes: xtend(loop.state.meshes, meshes)
+  }))
 }
 
 var clear = glclear({ color: [0.15, 0.08, 0.10, 1.0] })
@@ -87,7 +106,6 @@ function render (state) {
         if (canvas !== canvasElem) {
           canvas = canvasElem
           gl = canvas.getContext('webgl')
-          ongl(gl, state)
           draw(gl, state)
         } else draw(gl, state)
       }
@@ -121,7 +139,7 @@ function createEarth () {
   }
 }
 
-function ongl (gl, state) {
+function draw (gl, state) {
   Object.keys(state.meshes).forEach(function (key) {
     if (meshCache[key] !== state.meshes[key]) {
       complexes[key] = complex(gl, state.meshes[key])
@@ -131,9 +149,7 @@ function ongl (gl, state) {
   Object.keys(complexes).forEach(function (key) {
     if (!state.meshes[key]) delete complexes[key]
   })
-}
 
-function draw (gl, state) {
   var width = gl.drawingBufferWidth
   var height = gl.drawingBufferHeight
   clear(gl)
