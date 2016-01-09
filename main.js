@@ -1,5 +1,6 @@
 var mat4 = require('gl-mat4')
 var glclear = require('gl-clear')
+var glBuffer = require('gl-buffer')
 var complex = require('gl-simplicial-complex')
 var sphere = require('primitive-sphere')
 
@@ -7,8 +8,6 @@ var wgs84 = require('wgs84')
 var xtend = require('xtend')
 
 var clear = glclear({ color: [0.15, 0.08, 0.10, 1.0] })
-var gl, earth
-
 var vdom = require('virtual-dom')
 var h = require('virtual-hyperscript-hook')(vdom.h)
 var main = require('main-loop')
@@ -40,11 +39,27 @@ function render (state) {
       height: state.height,
       hook: function (canvas) {
         gl = canvas.getContext('webgl')
-        earth = complex(gl, sphere(wgs84.RADIUS/1e3))
+        ongl(gl)
         draw(gl, state)
       }
     })
   ])
+}
+
+var gl, earth
+function ongl (gl) {
+  var mesh = sphere(wgs84.RADIUS/1e3)
+  var edges = []
+  mesh.cells.forEach(function (cell) {
+    edges.push([cell[0],cell[1]])
+    edges.push([cell[1],cell[2]])
+    edges.push([cell[2],cell[0]])
+  }),
+  earth = complex(gl, {
+    cells: edges,
+    positions: mesh.positions,
+    meshColor: [0,1,0]
+  })
 }
 
 function draw (gl, state) {
