@@ -10,6 +10,7 @@ var ecef = require('geodetic-to-ecef')
 var wgs84 = require('wgs84')
 var xtend = require('xtend')
 var lookat = require('lookat-camera')
+var triangulate = require('delaunay-triangulate')
 
 var dragDrop = require('drag-and-drop-files')
 dragDrop(window, function (files) {
@@ -54,21 +55,24 @@ function addGeoJSON (name, data) {
         }
         for (var i = 0; i < pts.length; i++) {
           mesh.positions.push(xecef(pts[i][1], pts[i][0], 0))
-          mesh.vertexColors.push([0,1,0])
+          mesh.vertexColors.push([0,0,0.5])
         }
       })
     } else if (feature.geometry.type === 'Polygon') {
-      feature.geometry.coordinates.forEach(function (pts) {
+      feature.geometry.coordinates.forEach(function (points) {
         var len = mesh.positions.length
-        for (var i = 1; i < pts.length; i++) {
-          mesh.cells.push([ len + i - 1, len + i ])
-        }
+        var pts = points.map(function (pt) {
+          return xecef(pt[1], pt[0], 0)
+        })
+        mesh.positions.push.apply(mesh.positions, pts)
         for (var i = 0; i < pts.length; i++) {
-          var loop = []
-        }
-        for (var i = 0; i < pts.length; i++) {
-          mesh.positions.push(xecef(pts[i][1], pts[i][0], 0))
           mesh.vertexColors.push([0,1,0])
+        }
+        var triangles = triangulate(pts)
+        for (var i = 0; i < triangles.length; i++) {
+          var t = triangles[i]
+          mesh.cells.push([t[0]+len,t[1]+len,t[2]+len])
+          mesh.cells.push([t[1]+len,t[2]+len,t[0]+len])
         }
       })
     }
