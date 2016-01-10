@@ -53,7 +53,7 @@ function addGeoJSON (name, data) {
           mesh.cells.push([ len + i - 1, len + i ])
         }
         for (var i = 0; i < pts.length; i++) {
-          mesh.positions.push(xecef(pts[i][0], pts[i][1], 0))
+          mesh.positions.push(xecef(pts[i][1], pts[i][0], 0))
           mesh.vertexColors.push([0,1,0])
         }
       })
@@ -67,7 +67,7 @@ function addGeoJSON (name, data) {
           var loop = []
         }
         for (var i = 0; i < pts.length; i++) {
-          mesh.positions.push(xecef(pts[i][0], pts[i][1], 0))
+          mesh.positions.push(xecef(pts[i][1], pts[i][0], 0))
           mesh.vertexColors.push([0,1,0])
         }
       })
