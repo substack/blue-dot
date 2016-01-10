@@ -136,17 +136,28 @@ window.addEventListener('keydown', function (ev) {
     }))
   } else if (ev.keyCode === 189) { // +
     loop.update(xtend(loop.state, {
-      camera: [c[0],c[1],Math.min(wgs84.RADIUS*4,c[2]*1.1)]
+      camera: [c[0],c[1],Math.min(wgs84.RADIUS*2,c[2]*1.1)]
     }))
   }
-  console.log(ev.keyCode)
 })
 
 window.addEventListener('wheel', function (ev) {
   var c = loop.state.camera
   var z = Math.max(1e3,Math.min(
-    wgs84.RADIUS*4, c[2]*(1+ev.deltaY/1000)))
+    wgs84.RADIUS*2, c[2]*(1+ev.deltaY/1000)))
   loop.update(xtend(loop.state, { camera: [c[0],c[1],z] }))
+})
+
+window.addEventListener('mousemove', function (ev) {
+  if (ev.buttons & 1 === 1) {
+    console.log(ev.movementX, ev.movementY)
+    var c = loop.state.camera
+    var dx = ev.movementY * c[2] / wgs84.RADIUS / 8
+    var dy = -ev.movementX * c[2] / wgs84.RADIUS / 8
+    loop.update(xtend(loop.state, {
+      camera: [c[0]+dx,c[1]+dy,c[2]]
+    }))
+  }
 })
 
 function render (state) {
