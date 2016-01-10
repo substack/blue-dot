@@ -44,6 +44,14 @@ function loadZip (file, buf) {
   }
 }
 
+var colors = [
+  [1,1,0],
+  [1,0,1],
+  [1,0,0],
+  [0,1,1],
+  [0,1,0],
+  [0,0,1]
+]
 function addGeoJSON (name, data) {
   var mesh = { cells: [], positions: [], vertexColors: [] }
   data.features.forEach(function (feature) {
@@ -66,13 +74,12 @@ function addGeoJSON (name, data) {
         })
         mesh.positions.push.apply(mesh.positions, pts)
         for (var i = 0; i < pts.length; i++) {
-          mesh.vertexColors.push([0,1,0])
+          mesh.vertexColors.push(colors[i%colors.length])
         }
-        var triangles = triangulate(pts)
+        var triangles = triangulate(points)
         for (var i = 0; i < triangles.length; i++) {
           var t = triangles[i]
           mesh.cells.push([t[0]+len,t[1]+len,t[2]+len])
-          mesh.cells.push([t[1]+len,t[2]+len,t[0]+len])
         }
       })
     }
