@@ -9,7 +9,7 @@ var Zip = require('zip')
 var ecef = require('geodetic-to-ecef')
 var wgs84 = require('wgs84')
 var xtend = require('xtend')
-var triangulate = require('delaunay-triangulate')
+var lookat = require('lookat-camera')
 
 var dragDrop = require('drag-and-drop-files')
 dragDrop(window, function (files) {
@@ -165,12 +165,12 @@ function draw (gl, state) {
   var height = gl.drawingBufferHeight
   clear(gl)
   gl.viewport(0, 0, width, height)
-  var view = mat4.create()
-  var pos = xecef(state.camera[0], state.camera[1], wgs84.RADIUS/1e3*3)
-  mat4.lookAt(view, pos, [0,0,0], [0,0,1])
+  var camera = lookat()
+  camera.position = xecef(state.camera[0], state.camera[1], wgs84.RADIUS*3)
+  camera.target = [0,0,0]
 
   var drawopts = {
-    view: view,
+    view: camera.view(mat4.create()),
     projection: mat4.perspective(
       mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10)
   }
