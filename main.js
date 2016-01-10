@@ -6,9 +6,10 @@ var sphere = require('primitive-sphere')
 var shp2json = require('shapefile2geojson')
 var Zip = require('zip')
 
-var gecef = require('geodetic-to-ecef')
+var ecef = require('geodetic-to-ecef')
 var wgs84 = require('wgs84')
 var xtend = require('xtend')
+var triangulate = require('delaunay-triangulate')
 
 var dragDrop = require('drag-and-drop-files')
 dragDrop(window, function (files) {
@@ -52,7 +53,21 @@ function addGeoJSON (name, data) {
           mesh.cells.push([ len + i - 1, len + i ])
         }
         for (var i = 0; i < pts.length; i++) {
-          mesh.positions.push(ecef(pts[i][0], pts[i][1], 0))
+          mesh.positions.push(xecef(pts[i][0], pts[i][1], 0))
+          mesh.vertexColors.push([0,1,0])
+        }
+      })
+    } else if (feature.geometry.type === 'Polygon') {
+      feature.geometry.coordinates.forEach(function (pts) {
+        var len = mesh.positions.length
+        for (var i = 1; i < pts.length; i++) {
+          mesh.cells.push([ len + i - 1, len + i ])
+        }
+        for (var i = 0; i < pts.length; i++) {
+          var loop = []
+        }
+        for (var i = 0; i < pts.length; i++) {
+          mesh.positions.push(xecef(pts[i][0], pts[i][1], 0))
           mesh.vertexColors.push([0,1,0])
         }
       })
@@ -78,9 +93,12 @@ var loop = main({
   camera: {
     translation: (function () {
       var v = mat4.create()
-      return mat4.translate(v, v, [0,0,-3*wgs84.RADIUS/1e3])
+      return mat4.translate(v, v, [0,-3*wgs84.RADIUS/1e3,0])
     })(),
-    rotation: mat4.create()
+    rotation: (function () {
+      var v = mat4.create()
+      return mat4.rotateX(v, v, Math.PI/2)
+    })()
   },
   meshes: { earth: createEarth() }
 }, render, vdom)
@@ -117,19 +135,21 @@ function createEarth () {
   var pos = [], cells = [], colors = [], normals = []
   pos.push([0,0,0])
   colors.push([0,1,1])
-  normals.push([0,0,-1])
+  normals.push([0,-1,0])
   for (var i = 0; i < 128; i++) {
-    var lat0 = Math.sin(i/128*2*Math.PI) * 180
-    var lon0 = 90
-    var lat1 = Math.sin((i-1)/128*2*Math.PI) * 180
-    var lon1 = 90
-    pos.push(ecef(lat0, lon0))
-    pos.push(ecef(lat1, lon1))
+    var theta0 = i/128 * 2 * Math.PI
+    var theta1 = (i-1)/128 * 2 * Math.PI
+    var lat0 = Math.cos(theta0) * 180
+    var lon0 = 0
+    var lat1 = Math.cos(theta1) * 180
+    var lon1 = 0
+    pos.push(xecef(lat0, lon0, 0))
+    pos.push(xecef(lat1, lon1, 0))
     colors.push([0,0.5,1])
     colors.push([0,0.5,1])
     cells.push([0,i*2+1,i*2+2])
-    normals.push([0,0,-1])
-    normals.push([0,0,-1])
+    normals.push([0,-1,0])
+    normals.push([0,-1,0])
   }
   return {
     cells: cells,
@@ -158,21 +178,20 @@ function draw (gl, state) {
   mat4.multiply(view, view, state.camera.rotation)
   mat4.multiply(view, view, state.camera.translation)
 
+  var drawopts = {
+    view: view,
+    projection: mat4.perspective(
+      mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10)
+  }
   Object.keys(complexes).forEach(function (key) {
-    complexes[key].draw({
-      view: view,
-      projection: mat4.perspective(
-        mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10)
-    })
+    complexes[key].draw(drawopts)
   })
 }
 
-function ecef (lat, lon, elev) {
-  var xyz = gecef(lat, lon, elev)
-  var x = xyz[0] / 1e3
-  var y = xyz[1] / 1e3
-  xyz[0] = y
-  xyz[1] = xyz[2] / 1e3
-  xyz[2] = x
+function xecef (lat, lon, elev) {
+  var xyz = ecef(lat, lon, elev)
+  xyz[0] /= 1e3
+  xyz[1] /= 1e3
+  xyz[2] /= 1e3
   return xyz
 }
