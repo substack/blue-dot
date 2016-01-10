@@ -151,12 +151,13 @@ function createEarth () {
   for (var i = 0; i < 128; i++) {
     var theta0 = i/128 * 2 * Math.PI
     var theta1 = (i-1)/128 * 2 * Math.PI
-    var lat0 = Math.cos(theta0) * 180
-    var lon0 = 0
-    var lat1 = Math.cos(theta1) * 180
-    var lon1 = 0
-    pos.push(xecef(lat0, lon0, 0))
-    pos.push(xecef(lat1, lon1, 0))
+    var lat0 = Math.sin(theta0) * 180
+    var lat1 = Math.sin(theta1) * 180
+    var pt0 = xecef(lat0, 0, 0)
+    pt0[1] -= 1e3
+    var pt1 = xecef(lat1, 0, 0)
+    pt1[1] -= 1e3
+    pos.push(pt0, pt1)
     colors.push([0,0.5,1])
     colors.push([0,0.5,1])
     cells.push([0,i*2+1,i*2+2])
