@@ -150,10 +150,10 @@ window.addEventListener('wheel', function (ev) {
 
 window.addEventListener('mousemove', function (ev) {
   if (ev.buttons & 1 === 1) {
-    console.log(ev.movementX, ev.movementY)
     var c = loop.state.camera
-    var dx = ev.movementY * c[2] / wgs84.RADIUS / 8
-    var dy = -ev.movementX * c[2] / wgs84.RADIUS / 8
+    var m = Math.min(loop.state.height, loop.state.width)
+    var dx = ev.movementY * c[2] / wgs84.RADIUS / m * 50
+    var dy = -ev.movementX * c[2] / wgs84.RADIUS / m * 50
     loop.update(xtend(loop.state, {
       camera: [c[0]+dx,c[1]+dy,c[2]]
     }))
