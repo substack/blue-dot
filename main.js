@@ -90,7 +90,7 @@ var main = require('main-loop')
 var loop = main({
   width: window.innerWidth,
   height: window.innerHeight,
-  camera: [45,-120],
+  camera: [25,-120],
   meshes: { earth: createEarth() }
 }, render, vdom)
 document.querySelector('#content').appendChild(loop.target)
@@ -100,6 +100,26 @@ window.addEventListener('resize', function () {
     width: window.innerWidth,
     height: window.innerHeight
   }))
+})
+
+window.addEventListener('keydown', function (ev) {
+  if (ev.keyCode === 37) { // left
+    loop.update(xtend(loop.state, {
+      camera: [loop.state.camera[0],loop.state.camera[1]-1]
+    }))
+  } else if (ev.keyCode === 39) { // right
+    loop.update(xtend(loop.state, {
+      camera: [loop.state.camera[0],loop.state.camera[1]+1]
+    }))
+  } else if (ev.keyCode === 38) { // up
+    loop.update(xtend(loop.state, {
+      camera: [loop.state.camera[0]+1,loop.state.camera[1]]
+    }))
+  } else if (ev.keyCode === 40) { // down
+    loop.update(xtend(loop.state, {
+      camera: [loop.state.camera[0]-1,loop.state.camera[1]]
+    }))
+  }
 })
 
 function render (state) {
@@ -165,14 +185,17 @@ function draw (gl, state) {
   var height = gl.drawingBufferHeight
   clear(gl)
   gl.viewport(0, 0, width, height)
+  gl.enable(gl.DEPTH_TEST)
   var camera = lookat()
   camera.position = xecef(state.camera[0], state.camera[1], wgs84.RADIUS*3)
+  camera.up = [0,0,1]
   camera.target = [0,0,0]
 
   var drawopts = {
     view: camera.view(mat4.create()),
     projection: mat4.perspective(
-      mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10)
+      mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10
+    )
   }
   Object.keys(complexes).forEach(function (key) {
     complexes[key].draw(drawopts)
