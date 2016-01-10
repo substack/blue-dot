@@ -90,16 +90,7 @@ var main = require('main-loop')
 var loop = main({
   width: window.innerWidth,
   height: window.innerHeight,
-  camera: {
-    translation: (function () {
-      var v = mat4.create()
-      return mat4.translate(v, v, [0,-3*wgs84.RADIUS/1e3,0])
-    })(),
-    rotation: (function () {
-      var v = mat4.create()
-      return mat4.rotateX(v, v, Math.PI/2)
-    })()
-  },
+  camera: [45,-120],
   meshes: { earth: createEarth() }
 }, render, vdom)
 document.querySelector('#content').appendChild(loop.target)
@@ -175,8 +166,8 @@ function draw (gl, state) {
   clear(gl)
   gl.viewport(0, 0, width, height)
   var view = mat4.create()
-  mat4.multiply(view, view, state.camera.rotation)
-  mat4.multiply(view, view, state.camera.translation)
+  var pos = xecef(state.camera[0], state.camera[1], wgs84.RADIUS/1e3*3)
+  mat4.lookAt(view, pos, [0,0,0], [0,0,1])
 
   var drawopts = {
     view: view,
