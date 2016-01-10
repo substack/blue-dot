@@ -90,7 +90,7 @@ var main = require('main-loop')
 var loop = main({
   width: window.innerWidth,
   height: window.innerHeight,
-  camera: [25,-120],
+  camera: [25,-120, wgs84.RADIUS*3],
   meshes: { earth: createEarth() }
 }, render, vdom)
 document.querySelector('#content').appendChild(loop.target)
@@ -103,21 +103,22 @@ window.addEventListener('resize', function () {
 })
 
 window.addEventListener('keydown', function (ev) {
+  var c = loop.state.camera
   if (ev.keyCode === 37) { // left
     loop.update(xtend(loop.state, {
-      camera: [loop.state.camera[0],loop.state.camera[1]-1]
+      camera: [c[0],c[1]-1,c[2]]
     }))
   } else if (ev.keyCode === 39) { // right
     loop.update(xtend(loop.state, {
-      camera: [loop.state.camera[0],loop.state.camera[1]+1]
+      camera: [c[0],c[1]+1,c[2]]
     }))
   } else if (ev.keyCode === 38) { // up
     loop.update(xtend(loop.state, {
-      camera: [loop.state.camera[0]+1,loop.state.camera[1]]
+      camera: [c[0]+1,c[1],c[2]]
     }))
   } else if (ev.keyCode === 40) { // down
     loop.update(xtend(loop.state, {
-      camera: [loop.state.camera[0]-1,loop.state.camera[1]]
+      camera: [c[0]-1,c[1],c[2]]
     }))
   }
 })
@@ -187,18 +188,24 @@ function draw (gl, state) {
   gl.viewport(0, 0, width, height)
   gl.enable(gl.DEPTH_TEST)
   var camera = lookat()
-  camera.position = xecef(state.camera[0], state.camera[1], wgs84.RADIUS*3)
+  camera.position = xecef(state.camera[0], state.camera[1], state.camera[2])
   camera.up = [0,0,1]
   camera.target = [0,0,0]
 
-  var drawopts = {
-    view: camera.view(mat4.create()),
-    projection: mat4.perspective(
-      mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10
-    )
-  }
+  var xcamera = lookat()
+  xcamera.position = xecef(0, -90, state.camera[2])
+  xcamera.up = [0,0,1]
+  xcamera.target = [0,0,0]
+
+  var view = camera.view(mat4.create())
+  var proj = mat4.perspective(
+    mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10
+  )
   Object.keys(complexes).forEach(function (key) {
-    complexes[key].draw(drawopts)
+    complexes[key].draw({
+      view: key === 'earth' ? xcamera.view(mat4.create()) : view,
+      projection: proj
+    })
   })
 }
 
