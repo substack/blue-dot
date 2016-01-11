@@ -44,17 +44,18 @@ window.addEventListener('mousemove', function (ev) {
   if (ev.target.tagName.toUpperCase() !== 'CANVAS') return
   if (ev.buttons & 1 === 1) bus.emit('drag', ev.movementX, ev.movementY)
   var c = loop.state.camera
-  var pos = ecef(c[0], c[1], c[2])
-  var ray = [0,0,0]
+  var pos = ecef(0, 0, c[2])
+  var ray = [-1,0,0]
   var mat = mat4.create()
-  mat4.rotateY(mat, mat, (2*ev.offsetX/loop.state.width-1) * Math.PI/8)
-  mat4.rotateX(mat, mat, (1-2*ev.offsetY/loop.state.height) * Math.PI/8)
-  mat4.translate(mat, mat, vec3.subtract([], [0,0,0], pos))
+  var w = loop.state.width, h = loop.state.height
+  mat4.rotateY(mat, mat, (2*ev.offsetX/w-1) * (w/h) * Math.PI/8)
+  mat4.rotateZ(mat, mat, (1-2*ev.offsetY/h) * Math.PI/8)
+
   vec3.transformMat4(ray, ray, mat)
   vec3.normalize(ray, ray)
 
   var hit = sphereIntersect([], pos, ray, [0,0,0], RADIUS/1e3)
-  console.log((hit?'HIT':'RAY'), ray)
+  console.log(hit)
 })
 window.addEventListener('mousedown', function (ev) {
   if (ev.buttons & 1 === 1) {
