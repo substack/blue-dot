@@ -47,20 +47,22 @@ window.addEventListener('mousemove', function (ev) {
   var rho = (1-2*ev.screenY/loop.state.width) * Math.PI/8
   var rmat = mat4.create()
 
-  var camera = lookat()
   var c = loop.state.camera
-  var pos = ecef(c[0], c[1], c[2])
-  var view = mat4.lookAt(mat4.create(), pos, [0,0,0], [0,0,1])
-  var rot = mat4.create()
-  mat4.rotateY(rot, rot, theta)
-  mat4.rotateX(rot, rot, rho)
-  mat4.multiply(view, rot, view)
+  var camera = lookat()
+  camera.position = ecef(c[0], c[1], c[2])
+  camera.up = [0,0,1]
+  camera.target = [0,0,0]
+  var view = camera.view(mat4.create())
+  //mat4.rotateY(view, view, theta)
+  //mat4.rotateX(view, view, rho)
+
   var ray = [0,0,0]
   vec3.transformMat4(ray, ray, view)
   vec3.normalize(ray, ray)
 console.log('RAY=', ray)
+console.log(camera.position)
 
-  var hit = sphereIntersect([], pos, ray, [0,0,0], RADIUS/1e3)
+  var hit = sphereIntersect([], camera.position, ray, [0,0,0], RADIUS/1e3)
   if (hit) {
     console.log('HIT=', hit)
   }
