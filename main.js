@@ -45,7 +45,6 @@ window.addEventListener('mousemove', function (ev) {
   if (ev.buttons & 1 === 1) bus.emit('drag', ev.movementX, ev.movementY)
   var theta = (2*ev.screenX/loop.state.width-1) * Math.PI/8
   var rho = (1-2*ev.screenY/loop.state.width) * Math.PI/8
-  var rmat = mat4.create()
 
   var c = loop.state.camera
   var camera = lookat()
