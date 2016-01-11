@@ -43,28 +43,18 @@ window.addEventListener('wheel', function (ev) {
 window.addEventListener('mousemove', function (ev) {
   if (ev.target.tagName.toUpperCase() !== 'CANVAS') return
   if (ev.buttons & 1 === 1) bus.emit('drag', ev.movementX, ev.movementY)
-  var theta = (2*ev.screenX/loop.state.width-1) * Math.PI/8
-  var rho = (1-2*ev.screenY/loop.state.width) * Math.PI/8
-
   var c = loop.state.camera
-  var camera = lookat()
-  camera.position = ecef(c[0], c[1], c[2])
-  camera.up = [0,0,1]
-  camera.target = [0,0,0]
-  var view = camera.view(mat4.create())
-  //mat4.rotateY(view, view, theta)
-  //mat4.rotateX(view, view, rho)
-
+  var pos = ecef(c[0], c[1], c[2])
   var ray = [0,0,0]
-  vec3.transformMat4(ray, ray, view)
+  var mat = mat4.create()
+  mat4.rotateY(mat, mat, (2*ev.offsetX/loop.state.width-1) * Math.PI/8)
+  mat4.rotateX(mat, mat, (1-2*ev.offsetY/loop.state.height) * Math.PI/8)
+  mat4.translate(mat, mat, vec3.subtract([], [0,0,0], pos))
+  vec3.transformMat4(ray, ray, mat)
   vec3.normalize(ray, ray)
-console.log('RAY=', ray)
-console.log(camera.position)
 
-  var hit = sphereIntersect([], camera.position, ray, [0,0,0], RADIUS/1e3)
-  if (hit) {
-    console.log('HIT=', hit)
-  }
+  var hit = sphereIntersect([], pos, ray, [0,0,0], RADIUS/1e3)
+  console.log((hit?'HIT':'RAY'), ray)
 })
 window.addEventListener('mousedown', function (ev) {
   if (ev.buttons & 1 === 1) {
