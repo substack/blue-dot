@@ -1,8 +1,10 @@
 var mat4 = require('gl-mat4')
+var vec3 = require('gl-vec3')
+
 var glclear = require('gl-clear')
 var glBuffer = require('gl-buffer')
 var complex = require('gl-simplicial-complex')
-var sphere = require('primitive-sphere')
+var sphereIntersect = require('ray-sphere-intersection')
 
 var lookat = require('lookat-camera')
 var triangulate = require('delaunay-triangulate')
@@ -39,7 +41,34 @@ window.addEventListener('wheel', function (ev) {
   bus.emit('wheel', ev.deltaY)
 })
 window.addEventListener('mousemove', function (ev) {
+  if (ev.target.tagName.toUpperCase() !== 'CANVAS') return
   if (ev.buttons & 1 === 1) bus.emit('drag', ev.movementX, ev.movementY)
+  var theta = (2*ev.screenX/loop.state.width-1) * Math.PI/8
+  var rho = (1-2*ev.screenY/loop.state.width) * Math.PI/8
+  var rmat = mat4.create()
+
+  var camera = lookat()
+  var c = loop.state.camera
+  var pos = ecef(c[0], c[1], c[2])
+  var view = mat4.lookAt(mat4.create(), pos, [0,0,0], [0,0,1])
+  var rot = mat4.create()
+  mat4.rotateY(rot, rot, theta)
+  mat4.rotateX(rot, rot, rho)
+  mat4.multiply(view, rot, view)
+  var ray = [0,0,0]
+  vec3.transformMat4(ray, ray, view)
+  vec3.normalize(ray, ray)
+console.log('RAY=', ray)
+
+  var hit = sphereIntersect([], pos, ray, [0,0,0], RADIUS/1e3)
+  if (hit) {
+    console.log('HIT=', hit)
+  }
+})
+window.addEventListener('mousedown', function (ev) {
+  if (ev.buttons & 1 === 1) {
+    if (loop.state.mode === 'area') bus.emit('area-point')
+  }
 })
 
 var dragDrop = require('drag-and-drop-files')
@@ -55,6 +84,7 @@ function render (state) {
         var c = state.mode === mode ? '.selected' : ''
         return h('button' + c, { onclick: onclick }, mode)
         function onclick (ev) {
+          ev.stopPropagation()
           if (loop.state.mode === mode) bus.emit('mode', 'view')
           else bus.emit('mode', mode)
         }
@@ -135,7 +165,7 @@ function draw (gl, state) {
 
   var view = camera.view(mat4.create())
   var proj = mat4.perspective(
-    mat4.create(), Math.PI/4.0, width/height, 0.1, 1e10
+    mat4.create(), Math.PI/4, width/height, 0.1, 1e10
   )
   Object.keys(complexes).forEach(function (key) {
     complexes[key].draw({
