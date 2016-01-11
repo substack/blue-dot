@@ -23,7 +23,8 @@ var loop = main({
   height: window.innerHeight,
   camera: [25,-120, RADIUS*2],
   meshes: { earth: createEarth() },
-  mode: 'view'
+  mode: 'view',
+  hit: null
 }, render, vdom)
 document.querySelector('#content').appendChild(loop.target)
 
@@ -53,9 +54,7 @@ window.addEventListener('mousemove', function (ev) {
 
   vec3.transformMat4(ray, ray, mat)
   vec3.normalize(ray, ray)
-
-  var hit = sphereIntersect([], pos, ray, [0,0,0], RADIUS/1e3)
-  console.log(hit)
+  bus.emit('hit', sphereIntersect([], pos, ray, [0,0,0], RADIUS/1e3))
 })
 window.addEventListener('mousedown', function (ev) {
   if (ev.buttons & 1 === 1) {
@@ -126,6 +125,16 @@ function createEarth () {
 }
 
 function draw (gl, state) {
+  if (state.hit) {
+    var h = state.hit
+    state.meshes.hit = {
+      positions: [h,vec3.scale([], h, 2)],
+      cells: [[0,1]],
+      meshColor: [1,0,1]
+    }
+  } else {
+    delete state.meshes.hit
+  }
   Object.keys(state.meshes).forEach(function (key) {
     if (meshCache[key] !== state.meshes[key]) {
       complexes[key] = complex(gl, state.meshes[key])
