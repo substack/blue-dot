@@ -46,22 +46,17 @@ window.addEventListener('mousemove', function (ev) {
   if (ev.buttons & 1 === 1) bus.emit('drag', ev.movementX, ev.movementY)
   var c = loop.state.camera
   var pos = ecef(c[0], c[1], c[2])
-
   var ray = vec3.subtract([], [0,0,0], pos)
+
   var w = loop.state.width, h = loop.state.height
   var dlat = (1-2*ev.offsetY/h) * Math.PI/8
   var dlon = (1-2*ev.offsetX/w) * (w/h) * Math.PI/8
-
-  //mat4.rotateY(view, view, dlon)
-  //mat4.rotateX(view, view, dlat)
-
-  var view = mat4.create()
-  mat4.rotateZ(view, view, dlon)
-  mat4.rotateX(view, view, dlat)
-  vec3.transformMat4(ray, ray, view)
   vec3.normalize(ray, ray)
 
   var hit = sphereIntersect([], pos, ray, [0,0,0], RADIUS/1e3)
+  if (hit) {
+    console.log('HIT', hit)
+  }
   bus.emit('hit', hit)
 })
 window.addEventListener('mousedown', function (ev) {
@@ -135,9 +130,17 @@ function createEarth () {
 function draw (gl, state) {
   if (state.hit) {
     var h = state.hit
+    var s = 100
     state.meshes.hit = {
-      positions: [h,vec3.scale([], h, 2)],
-      cells: [[0,1]],
+      positions: [
+        h,
+        vec3.scale([], h, 2),
+        [h[0]-s,h[1]-s,h[2]-s],
+        [h[0]+s,h[1]+s,h[2]+s],
+        [h[0]+s,h[1]-s,h[2]+s],
+        [h[0]-s,h[1]+s,h[2]-s]
+      ],
+      cells: [[0,1],[2,3],[4,5]],
       meshColor: [1,0,1]
     }
   } else {
