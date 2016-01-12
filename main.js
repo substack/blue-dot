@@ -49,17 +49,17 @@ window.addEventListener('mousemove', function (ev) {
   var w = loop.state.width, h = loop.state.height
   var lat = c[0]/180*Math.PI
   var lon = c[1]/180*Math.PI
-  var dx = (1-2*ev.offsetX/w) * (w/h) * Math.PI/8
-  var dy = (1-2*ev.offsetY/h) * Math.PI/8
+  var dx = (1-2*ev.offsetX/w) * Math.PI/8
+  var dy = (2*ev.offsetY/h-1) * Math.PI/8
 
   var pos = ecef(c[0], c[1], c[2])
   var ray = vec3.subtract([], [0,0,0], pos)
   var vx = [
-    pos[1] * Math.tan(lat) * Math.cos(lon),
-    pos[1],
-    pos[1] * Math.tan(lat) * Math.sin(lon)
+    pos[2] * Math.tan(lat) * Math.cos(lon),
+    pos[2],
+    pos[2] * Math.tan(lat) * Math.sin(lon)
   ]
-  var vy = vec3.cross([], vx, ray)
+  var vy = vec3.cross([], ray, vx)
   var mat = mat4.create()
   mat4.rotate(mat, mat, dx, vx)
   mat4.rotate(mat, mat, dy, vy)
@@ -67,6 +67,7 @@ window.addEventListener('mousemove', function (ev) {
   vec3.normalize(ray, ray)
 
   var hit = sphereIntersect([], pos, ray, [0,0,0], RADIUS/1e3)
+  loop.state.vx = vx
   bus.emit('hit', hit)
 })
 window.addEventListener('mousedown', function (ev) {
@@ -148,10 +149,17 @@ function draw (gl, state) {
         [h[0]-s,h[1]-s,h[2]-s],
         [h[0]+s,h[1]+s,h[2]+s],
         [h[0]+s,h[1]-s,h[2]+s],
-        [h[0]-s,h[1]+s,h[2]-s]
+        [h[0]-s,h[1]+s,h[2]-s],
+        [0,0,0],
+        vec3.scale([],state.vx, RADIUS/1e3*4),
       ],
-      cells: [[0,1],[2,3],[4,5]],
-      meshColor: [1,0,1]
+      cells: [[0,1],[2,3],[4,5],[6,7]],
+      cellColors: [
+        [1,0,1],
+        [1,0,1],
+        [1,0,1],
+        [1,1,0]
+      ],
     }
   } else {
     delete state.meshes.hit
