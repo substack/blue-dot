@@ -55,14 +55,14 @@ window.addEventListener('mousemove', function (ev) {
   var pos = ecef(c[0], c[1], c[2])
   var ray = vec3.subtract([], [0,0,0], pos)
   var vx = [
-    pos[2] * Math.tan(lat) * Math.cos(lon),
-    pos[2],
-    pos[2] * Math.tan(lat) * Math.sin(lon)
+    Math.cos(lon-Math.PI/2),
+    Math.sin(lon-Math.PI/2),
+    0
   ]
   var vy = vec3.cross([], ray, vx)
   var mat = mat4.create()
-  mat4.rotate(mat, mat, dx, vx)
-  mat4.rotate(mat, mat, dy, vy)
+  mat4.rotate(mat, mat, dy, vx)
+  mat4.rotate(mat, mat, dx, vy)
   vec3.transformMat4(ray, ray, mat)
   vec3.normalize(ray, ray)
 
