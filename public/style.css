@@ -4,6 +4,21 @@ body {
 #content {
   position: absolute;
 }
+.sidebar {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  background-color: lime;
+  z-index: 20;
+}
+.container {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+}
 .overlay {
   position: absolute;
   top: 0px;
@@ -11,27 +26,12 @@ body {
   right: 0px;
   bottom: 0px;
   z-index: 10;
-  width: 100%;
-  height: 100%;
-  background-color: red;
-  border: 1px solid purple;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-}
-.sidebar {
-  position: absolute;
-  border: 2px solid orange;
-  top: 0px;
-  right: 0px;
-  left: 0px;
-  bottom: 0px;
-  height: 100%;
-  background-color: lime;
-  z-index: 20;
 }
 .toolbar {
   position: absolute;

@@ -89,9 +89,12 @@ dragDrop(window, function (files) {
 
 function render (state) {
   if (gl) draw(gl, state)
-  var sideStyle = { width: state.sidebarWidth }
-
-  return h('div', [
+  var sideStyle = {
+    width: state.sidebarWidth + 'px',
+    height: state.height + 'px',
+    left: (state.width - state.sidebarWidth) + 'px'
+  }
+  return h('div.container', [
     h('div.overlay', [
       h('div.toolbar', ['point','line','area'].map(function (mode) {
         var c = state.mode === mode ? '.selected' : ''
@@ -101,10 +104,10 @@ function render (state) {
           if (loop.state.mode === mode) bus.emit('mode', 'view')
           else bus.emit('mode', mode)
         }
-      })),
-      h('div.sidebar', { style: sideStyle }, [
-        'sidebar!'
-      ])
+      }))
+    ]),
+    h('div.sidebar', { style: sideStyle }, [
+      'sidebar!'
     ]),
     h('canvas.gl', {
       width: state.width - state.sidebarWidth,
