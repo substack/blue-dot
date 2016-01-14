@@ -21,14 +21,19 @@ var main = require('main-loop')
 var loop = main({
   width: window.innerWidth,
   height: window.innerHeight,
+  sidebarWidth: 200,
   camera: [25,-120, RADIUS*2],
   meshes: { earth: createEarth() },
   mode: 'view',
-  hit: null
+  hit: null,
+  layers: {}
 }, render, vdom)
 document.querySelector('#content').appendChild(loop.target)
 
-var bus = require('./lib/actions.js')(loop)
+var IDB = require('idb-content-addressable-blob-store')
+var store = IDB()
+
+var bus = require('./lib/actions.js')(loop, store)
 window.addEventListener('resize', function (ev) {
   bus.emit('resize', {
     width: window.innerWidth,
@@ -46,10 +51,11 @@ window.addEventListener('mousemove', function (ev) {
   if (ev.buttons & 1 === 1) bus.emit('drag', ev.movementX, ev.movementY)
   var c = loop.state.camera
 
-  var w = loop.state.width, h = loop.state.height
+  var w = loop.state.width - loop.state.sidebarWidth
+  var h = loop.state.height
   var lat = c[0]/180*Math.PI
   var lon = c[1]/180*Math.PI
-  var dx = (1-2*ev.offsetX/w) * Math.PI/8
+  var dx = (1-2*ev.offsetX/w) * (w/h) * Math.PI/8
   var dy = (2*ev.offsetY/h-1) * Math.PI/8
 
   var pos = ecef(c[0], c[1], c[2])
@@ -83,6 +89,8 @@ dragDrop(window, function (files) {
 
 function render (state) {
   if (gl) draw(gl, state)
+  var sideStyle = { width: state.sidebarWidth }
+
   return h('div', [
     h('div.overlay', [
       h('div.toolbar', ['point','line','area'].map(function (mode) {
@@ -93,10 +101,13 @@ function render (state) {
           if (loop.state.mode === mode) bus.emit('mode', 'view')
           else bus.emit('mode', mode)
         }
-      }))
+      })),
+      h('div.sidebar', { style: sideStyle }, [
+        'sidebar!'
+      ])
     ]),
     h('canvas.gl', {
-      width: state.width,
+      width: state.width - state.sidebarWidth,
       height: state.height,
       hook: function (canvasElem) {
         if (canvas !== canvasElem) {

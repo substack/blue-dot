@@ -1,0 +1,57 @@
+body {
+  margin: 0px;
+}
+#content {
+  position: absolute;
+}
+.overlay {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  background-color: red;
+  border: 1px solid purple;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.sidebar {
+  position: absolute;
+  border: 2px solid orange;
+  top: 0px;
+  right: 0px;
+  left: 0px;
+  bottom: 0px;
+  height: 100%;
+  background-color: lime;
+  z-index: 20;
+}
+.toolbar {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 300px;
+}
+.toolbar button {
+  padding: 0.5em;
+  margin-right: 1em;
+  width: 80px;
+  background-color: rgb(220,220,220);
+}
+.toolbar button.selected {
+  border-style: inset;
+  background-color: rgb(180,180,180);
+}
+canvas.gl {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 5;
+}
