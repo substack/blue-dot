@@ -16,12 +16,18 @@ var vdom = require('virtual-dom')
 var h = require('virtual-hyperscript-hook')(vdom.h)
 
 var gl, canvas, complexes = {}, meshCache = {}
+var views = {
+  sidebar: require('./lib/sidebar.js')
+}
 
 var main = require('main-loop')
 var loop = main({
   width: window.innerWidth,
   height: window.innerHeight,
-  sidebarWidth: 200,
+  sidebar: {
+    width: 300,
+    page: 'layers'
+  },
   camera: [25,-120, RADIUS*2],
   meshes: { earth: createEarth() },
   mode: 'view',
@@ -51,7 +57,7 @@ window.addEventListener('mousemove', function (ev) {
   if (ev.buttons & 1 === 1) bus.emit('drag', ev.movementX, ev.movementY)
   var c = loop.state.camera
 
-  var w = loop.state.width - loop.state.sidebarWidth
+  var w = loop.state.width - loop.state.sidebar.width
   var h = loop.state.height
   var lat = c[0]/180*Math.PI
   var lon = c[1]/180*Math.PI
@@ -90,9 +96,9 @@ dragDrop(window, function (files) {
 function render (state) {
   if (gl) draw(gl, state)
   var sideStyle = {
-    width: state.sidebarWidth + 'px',
+    width: state.sidebar.width + 'px',
     height: state.height + 'px',
-    left: (state.width - state.sidebarWidth) + 'px'
+    left: (state.width - state.sidebar.width) + 'px'
   }
   return h('div.container', [
     h('div.overlay', [
@@ -104,13 +110,11 @@ function render (state) {
           if (loop.state.mode === mode) bus.emit('mode', 'view')
           else bus.emit('mode', mode)
         }
-      }))
-    ]),
-    h('div.sidebar', { style: sideStyle }, [
-      'sidebar!'
+      })),
+      h('div.sidebar', { style: sideStyle }, views.sidebar(state))
     ]),
     h('canvas.gl', {
-      width: state.width - state.sidebarWidth,
+      width: state.width - state.sidebar.width,
       height: state.height,
       hook: function (canvasElem) {
         if (canvas !== canvasElem) {
