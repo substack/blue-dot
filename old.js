@@ -1,3 +1,5 @@
+var regl = require('regl')()
+
 var mat4 = require('gl-mat4')
 var vec3 = require('gl-vec3')
 

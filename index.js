@@ -10,32 +10,45 @@ module.exports = function (regl, opts) {
     scattering: scattering(regl)
   }
   return function () {
-    draw.earth()
-    draw.scattering()
+    regl.draw(function (context) {
+      var t = context.time, sunr = 10
+      var sunpos = [
+        Math.sin(t)*sunr,
+        Math.sin(t*0.2)*0.05*sunr,
+        Math.cos(t)*sunr
+      ]
+      draw.earth({ sunpos: sunpos })
+      draw.scattering({ sunpos: sunpos })
+    })
   }
 }
 
 function scattering (regl) {
-  var model = []
+  var model = [], eyem = []
   var mesh = earthMesh()
   var R = 6.378137, RO = R*1.1;
+  var r = 1.3
   return regl({
     frag: `
       precision mediump float;
       varying vec3 vpos;
       varying float vdist;
       uniform vec2 size;
-      uniform float time, distance;
+      uniform float distance, time;
+      uniform mat4 eyem;
+      uniform vec3 eye, sunpos;
       ${scatter}
       void main () {
-        gl_FragColor = vec4(
-          scatter(
-            gl_FragCoord.xy + (exp(distance)/vdist-1.0)*size*0.5,
-            size/vdist*exp(distance),
-            time
-          ),
-          0.5
+        vec3 v = scatter(
+          gl_FragCoord.xy + (exp(distance)/vdist-1.0)*size*0.5,
+          size/vdist*exp(distance),
+          sunpos,
+          eyem
         );
+        v.x = pow(v.x,3.0);
+        v.y = pow(v.y,3.0);
+        v.z = pow(v.z,3.0);
+        gl_FragColor = vec4(v,length(v));
       }
     `,
     vert: `
@@ -47,7 +60,7 @@ function scattering (regl) {
       varying float vdist;
       void main () {
         vpos = position;
-        vdist = length(eye);
+        vdist = length(eye - vpos*0.25*${r});
         gl_Position = projection * view * model * vec4(position,1);
       }
     `,
@@ -57,10 +70,15 @@ function scattering (regl) {
     uniforms: {
       model: function () {
         mat4.identity(model)
-        var r = 1.3
         mat4.scale(model, model, [r,r,r])
         return model
       },
+      eyem: function (context) {
+        mat4.lookAt(eyem, context.center, context.eye, context.up)
+        mat4.invert(eyem, eyem)
+        return eyem
+      },
+      sunpos: regl.prop('sunpos'),
       size: function (props) {
         return [props.viewportWidth,props.viewportHeight]
       },
@@ -87,12 +105,16 @@ function earth (regl) {
     frag: `
       precision mediump float;
       varying vec3 vpos;
+      uniform vec3 sunpos;
       void main () {
+        vec3 npos = normalize(vpos);
         float c = clamp(max(
-          dot(vec3(0.4,0.5,0.2),vpos) * 0.5,
-          dot(vec3(-0.8,-0.8,-0.7),vpos) * 0.05
+          dot(normalize(sunpos),npos) * 1.2,
+          dot(vec3(-0.8,-0.8,-0.7),npos) * 0.05
         ), 0.0, 1.0);
         gl_FragColor = vec4(vec3(0,0.5,1)*pow(c,1.2),1);
+        //float c = sin(vpos.x) + sin(vpos.y) + sin(vpos.z);
+        //gl_FragColor = vec4(c,c,c,1);
       }
     `,
     vert: `
@@ -112,7 +134,8 @@ function earth (regl) {
       model: function () {
         mat4.identity(model)
         return model
-      }
+      },
+      sunpos: regl.prop('sunpos')
     },
     elements: mesh.cells
   })
