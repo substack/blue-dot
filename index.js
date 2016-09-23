@@ -212,20 +212,5 @@ function earthMesh () {
     pts[i][1] = pts[i][1]/1e6
     pts[i][2] = pts[i][2]/1e6
   }
-  /*
-  var n = [], a = [], b = []
-  for (var i = 0; i < mesh.cells.length; i++) {
-    var c = mesh.cells[i]
-    cross(n,
-      sub(a,pts[c[1]],pts[c[2]]),
-      sub(b,pts[c[0]],pts[c[2]])
-    )
-    if (dot(n, pts[c[0]]) < 0) {
-      var x = c[0]
-      c[0] = c[1]
-      c[1] = x
-    }
-  }
-  */
   return mesh
 }
