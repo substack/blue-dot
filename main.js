@@ -1,7 +1,9 @@
 var regl = require('regl')()
 var camera = require('regl-camera')(regl, {
   center: [0,0,0],
-  distance: 20
+  distance: 20,
+  maxDistance: 60,
+  minDistance: 8
 })
 var Earth = require('./')
 var resl = require('resl')
@@ -27,9 +29,9 @@ resl({
 function done (assets) {
   var earth = Earth(regl, {
     textures: {
-      night: regl.texture({ data: assets.night }),
-      day: regl.texture({ data: assets.day }),
-      clouds: regl.texture({ data: assets.clouds })
+      night: regl.texture({ data: assets.night, mag: 'linear' }),
+      day: regl.texture({ data: assets.day, mag: 'linear' }),
+      clouds: regl.texture({ data: assets.clouds, mag: 'linear' })
     }
   })
   regl.frame(function () {
