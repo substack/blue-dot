@@ -2,8 +2,6 @@
 // https://www.shadertoy.com/view/lslXDr
 
 var ecef = require('geodetic-to-ecef')
-var chart = require('conway-hart')
-var loop = require('loop-subdivide')
 var sphereMesh = require('sphere-mesh')
 
 var mat4 = require('gl-mat4')
@@ -124,7 +122,7 @@ function earth (regl, opts) {
         vec3 npos = normalize(vpos);
         vec3 vray = normalize(eye - vpos);
         vec3 vsun = normalize(sunpos);
-        float spec = beckmannSpecular(vsun, vray, npos, 0.3)*0.1;
+        float spec = beckmannSpecular(eye,vray,npos,0.4);
         float c = clamp(max(
           dot(normalize(sunpos),npos),
           dot(vec3(-0.8,-0.8,-0.7),npos) * 0.002
@@ -132,16 +130,18 @@ function earth (regl, opts) {
         float lon = mod(atan(npos.x,npos.z)*${0.5/Math.PI},1.0);
         float lat = asin(-npos.y*0.79-0.02)*0.5+0.5;
         vec3 d = pow(texture2D(day,vec2(lon,lat)).rgb,vec3(0.8));
-        vec3 dayc = pow(d*(pow(c,0.5)+spec),vec3(2.2));
+        float sd = spec*pow(step(max(d.r,d.g),d.b*0.8),4.0)*max(1.2,c);
+        vec3 dayc = pow(d*(pow(c,0.5)+sd),vec3(2.2));
         float dx = 0.0002;
         vec3 m0 = texture2D(night,vec2(lon+dx,lat-dx)).rgb;
         vec3 m1 = texture2D(night,vec2(lon+dx,lat+dx)).rgb;
         vec3 m2 = texture2D(night,vec2(lon-dx,lat-dx)).rgb;
         vec3 m3 = texture2D(night,vec2(lon-dx,lat+dx)).rgb;
-        vec3 m = pow((m0+m1+m2+m3)*0.25,vec3(3.0));
+        vec3 m = pow((m0+m1+m2+m3)*0.25,vec3(1.5));
         vec3 cl = texture2D(clouds,vec2(lon,lat)).rgb
           *pow(cos(pow(npos.y,32.0)),32.0);
-        gl_FragColor = vec4(dayc+pow(1.0-c-length(cl)*0.5,16.0)*m+cl*c,1);
+        gl_FragColor = vec4(dayc+pow(1.0-c-length(cl)*0.5,16.0)*m
+          +pow(cl*c,vec3(0.8)),1);
       }
     `,
     vert: `
