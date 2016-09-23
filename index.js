@@ -2,7 +2,8 @@
 // https://www.shadertoy.com/view/lslXDr
 
 var ecef = require('geodetic-to-ecef')
-var sphereMesh = require('sphere-mesh')
+//var sphereMesh = require('sphere-mesh')
+var sphereMesh = require('icosphere')
 
 var mat4 = require('gl-mat4')
 var fs = require('fs')
@@ -190,7 +191,7 @@ function earth (regl, opts) {
     },
     cull: {
       enable: true,
-      face: 'front'
+      face: 'back'
     }
   })
 }
@@ -200,7 +201,7 @@ var dot = require('gl-vec3/dot')
 var sub = require('gl-vec3/subtract')
 
 function earthMesh () {
-  var mesh = sphereMesh(50, 1)
+  var mesh = sphereMesh(5)
   var pts = mesh.positions
   for (var i = 0; i < pts.length; i++) {
     var p = pts[i]
@@ -211,6 +212,7 @@ function earthMesh () {
     pts[i][1] = pts[i][1]/1e6
     pts[i][2] = pts[i][2]/1e6
   }
+  /*
   var n = [], a = [], b = []
   for (var i = 0; i < mesh.cells.length; i++) {
     var c = mesh.cells[i]
@@ -224,5 +226,6 @@ function earthMesh () {
       c[1] = x
     }
   }
+  */
   return mesh
 }
