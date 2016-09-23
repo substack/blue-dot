@@ -139,7 +139,7 @@ function earth (regl, opts) {
         vec3 vsun = normalize(sunpos);
         vec3 L = normalize(sunpos - vpos);
         float spec = beckmannSpecular(eye,vray,npos,0.4)
-          + ggx(npos,vray,neye,0.6,0.5)*0.1;
+          + ggx(npos,vray,neye,0.6,0.5)*0.05;
         float c = clamp(max(
           dot(normalize(sunpos),npos),
           dot(vec3(-0.8,-0.8,-0.7),npos) * 0.002
