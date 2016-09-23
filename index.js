@@ -155,8 +155,9 @@ function earth (regl, opts) {
         vec3 m2 = texture2D(night,vec2(lon-dx,lat-dx)).rgb;
         vec3 m3 = texture2D(night,vec2(lon-dx,lat+dx)).rgb;
         vec3 m = pow((m0+m1+m2+m3)*0.25,vec3(1.5));
-        vec3 cl = texture2D(clouds,vec2(lon,lat)).rgb
-          *pow(cos(pow(npos.y,32.0)),32.0);
+        float polar = pow(cos(pow(npos.y,32.0)),32.0);
+        vec3 cl = polar*texture2D(clouds,vec2(lon,lat)).rgb
+          + (1.0-polar)*vec3(1);
         gl_FragColor = vec4(dayc+pow(1.0-c-length(cl)*0.5,16.0)*m
           +pow(cl*c,vec3(0.8)),1);
       }
