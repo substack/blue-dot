@@ -34,6 +34,7 @@
     "ray-sphere-intersection": "^1.0.0",
     "regl": "^1.2.1",
     "regl-camera": "^1.1.0",
+    "resl": "^1.0.2",
     "shapefile2geojson": "^1.0.6",
     "sphere-mesh": "^0.2.2",
     "virtual-dom": "^2.1.1",

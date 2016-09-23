@@ -15,8 +15,9 @@ var specular = ''
   + fs.readFileSync(require.resolve('glsl-specular-beckmann/index.glsl'),'utf8')
 
 module.exports = function (regl, opts) {
+  if (!opts) opts = {}
   var draw = {
-    earth: earth(regl),
+    earth: earth(regl, opts),
     scattering: scattering(regl)
   }
   return function () {
@@ -108,14 +109,16 @@ function scattering (regl) {
   })
 }
 
-function earth (regl) {
+function earth (regl, opts) {
   var model = []
   var mesh = earthMesh(1)
+  var textures = opts.textures || {}
   return regl({
     frag: `
       precision mediump float;
       varying vec3 vpos;
       uniform vec3 sunpos, eye;
+      uniform sampler2D night;
       ${specular}
       void main () {
         vec3 npos = normalize(vpos);
@@ -124,9 +127,12 @@ function earth (regl) {
         float spec = beckmannSpecular(vsun, vray, npos, 0.3)*0.1;
         float c = clamp(max(
           dot(normalize(sunpos),npos),
-          dot(vec3(-0.8,-0.8,-0.7),npos) * 0.05
+          dot(vec3(-0.8,-0.8,-0.7),npos) * 0.002
         ), 0.0, 1.0)*2.2;
-        gl_FragColor = vec4(pow(vec3(0.3,0.7,1)*(pow(c,0.5)+spec),vec3(2.2)), 1);
+        //gl_FragColor = vec4(pow(vec3(0.3,0.7,1)*(pow(c,0.5)+spec),vec3(2.2)), 1);
+        float lon = mod(atan(npos.x,npos.z)*${0.5/Math.PI},1.0);
+        float lat = asin(-npos.y*0.79-0.02)*0.5+0.5;
+        gl_FragColor = vec4(texture2D(night,vec2(lon,lat)).rgb, 1);
       }
     `,
     vert: `
@@ -147,7 +153,8 @@ function earth (regl) {
         mat4.identity(model)
         return model
       },
-      sunpos: regl.prop('sunpos')
+      sunpos: regl.prop('sunpos'),
+      night: textures.night
     },
     elements: mesh.cells,
     depth: {
