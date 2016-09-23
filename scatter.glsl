@@ -114,23 +114,3 @@ vec3 in_scatter( vec3 o, vec3 dir, vec2 e, vec3 l ) {
   
   return sum * ( K_R * C_R * phase_reyleigh( cc ) + K_M * phase_mie( G_M, c, cc ) ) * E;
 }
-
-/*
-vec3 scatter (vec2 px, vec2 size, vec3 sunpos, mat4 view) {
-  // default ray dir
-  vec3 dir = ray_dir(45.0, size, px);
-  vec3 eye = vec3( 0.0, 0.0, 2.4 );
-  eye = (view * vec4(eye,1)).xyz;
-  dir = (view * vec4(dir,1)).xyz;
-
-  vec2 e = ray_sphere_intersect( eye, dir, R );
-  if ( e.x > e.y ) {
-    return vec3(1,0,0);
-  }
-  
-  vec2 f = ray_sphere_intersect( eye, dir, R_INNER );
-  e.y = min( e.y, f.x );
-
-  return in_scatter(eye,dir,e,normalize(-sunpos));
-}
-*/
