@@ -118,7 +118,7 @@ function earth (regl, opts) {
       precision mediump float;
       varying vec3 vpos;
       uniform vec3 sunpos, eye;
-      uniform sampler2D night;
+      uniform sampler2D night, day;
       ${specular}
       void main () {
         vec3 npos = normalize(vpos);
@@ -129,10 +129,17 @@ function earth (regl, opts) {
           dot(normalize(sunpos),npos),
           dot(vec3(-0.8,-0.8,-0.7),npos) * 0.002
         ), 0.0, 1.0)*2.2;
-        //gl_FragColor = vec4(pow(vec3(0.3,0.7,1)*(pow(c,0.5)+spec),vec3(2.2)), 1);
         float lon = mod(atan(npos.x,npos.z)*${0.5/Math.PI},1.0);
         float lat = asin(-npos.y*0.79-0.02)*0.5+0.5;
-        gl_FragColor = vec4(texture2D(night,vec2(lon,lat)).rgb, 1);
+        vec3 d = pow(texture2D(day,vec2(lon,lat)).rgb,vec3(0.8));
+        vec3 dayc = pow(d*(pow(c,0.5)+spec),vec3(2.2));
+        float dx = 0.0002;
+        vec3 m0 = texture2D(night,vec2(lon+dx,lat-dx)).rgb;
+        vec3 m1 = texture2D(night,vec2(lon+dx,lat+dx)).rgb;
+        vec3 m2 = texture2D(night,vec2(lon-dx,lat-dx)).rgb;
+        vec3 m3 = texture2D(night,vec2(lon-dx,lat+dx)).rgb;
+        vec3 m = pow((m0+m1+m2+m3)*0.25,vec3(3.0));
+        gl_FragColor = vec4(dayc + pow(1.0-c,16.0)*m, 1);
       }
     `,
     vert: `
@@ -154,7 +161,8 @@ function earth (regl, opts) {
         return model
       },
       sunpos: regl.prop('sunpos'),
-      night: textures.night
+      night: textures.night,
+      day: textures.day
     },
     elements: mesh.cells,
     depth: {
