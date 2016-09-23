@@ -15,6 +15,10 @@ resl({
     day: {
       type: 'image',
       src: 'data/day.jpg'
+    },
+    clouds: {
+      type: 'image',
+      src: 'data/clouds.jpg'
     }
   },
   onDone: done
@@ -24,7 +28,8 @@ function done (assets) {
   var earth = Earth(regl, {
     textures: {
       night: regl.texture({ data: assets.night }),
-      day: regl.texture({ data: assets.day })
+      day: regl.texture({ data: assets.day }),
+      clouds: regl.texture({ data: assets.clouds })
     }
   })
   regl.frame(function () {
