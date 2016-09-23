@@ -118,11 +118,27 @@ function earth (regl, opts) {
       uniform vec3 sunpos, eye;
       uniform sampler2D night, day, clouds;
       ${specular}
+      float ggx (vec3 N, vec3 V, vec3 L, float roughness, float F0) {
+        float alpha = roughness*roughness;
+        vec3 H = normalize(L - V);
+        float dotLH = max(0.0, dot(L,H));
+        float dotNH = max(0.0, dot(N,H));
+        float alphaSqr = alpha * alpha;
+        float denom = dotNH * dotNH * (alphaSqr - 1.0) + 1.0;
+        float D = alphaSqr / (${Math.PI} * denom * denom);
+        float F = F0 + (1.0 - F0) * pow(1.0 - dotLH, 5.0);
+        float k = 0.5 * alpha;
+        float k2 = k * k;
+        return D * F / (dotLH*dotLH*(1.0-k2)+k2);
+      }
       void main () {
         vec3 npos = normalize(vpos);
+        vec3 neye = normalize(eye);
         vec3 vray = normalize(eye - vpos);
         vec3 vsun = normalize(sunpos);
-        float spec = beckmannSpecular(eye,vray,npos,0.4);
+        vec3 L = normalize(sunpos - vpos);
+        float spec = beckmannSpecular(eye,vray,npos,0.4)
+          + ggx(npos,vray,neye,0.6,0.5)*0.1;
         float c = clamp(max(
           dot(normalize(sunpos),npos),
           dot(vec3(-0.8,-0.8,-0.7),npos) * 0.002
