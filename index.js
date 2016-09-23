@@ -1,5 +1,11 @@
+// http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter16.html
+// https://www.shadertoy.com/view/lslXDr
+
 var ecef = require('geodetic-to-ecef')
+var chart = require('conway-hart')
+var loop = require('loop-subdivide')
 var sphereMesh = require('sphere-mesh')
+
 var mat4 = require('gl-mat4')
 var fs = require('fs')
 var scatter = fs.readFileSync(__dirname+'/scatter.glsl','utf8')
@@ -11,7 +17,7 @@ module.exports = function (regl, opts) {
   }
   return function () {
     regl.draw(function (context) {
-      var t = context.time, sunr = 10
+      var t = context.time*0.1, sunr = 10
       var sunpos = [
         Math.sin(t)*sunr,
         Math.sin(t*0.2)*0.05*sunr,
@@ -26,41 +32,37 @@ module.exports = function (regl, opts) {
 function scattering (regl) {
   var model = [], eyem = []
   var mesh = earthMesh()
-  var R = 6.378137, RO = R*1.1;
-  var r = 1.3
+  var r = 1.04, inSteps = 10, outSteps = 10
+  var R = 6.378137, RO = R*r
+
   return regl({
     frag: `
       precision mediump float;
-      varying vec3 vpos;
-      varying float vdist;
-      uniform vec2 size;
-      uniform float distance, time;
-      uniform mat4 eyem;
-      uniform vec3 eye, sunpos;
-      ${scatter}
+      varying vec3 vscatter, vpos, vray, vsun;
+      uniform vec3 sunpos, eye;
       void main () {
-        vec3 v = scatter(
-          gl_FragCoord.xy + (exp(distance)/vdist-1.0)*size*0.5,
-          size/vdist*exp(distance),
-          sunpos,
-          eyem
-        );
-        v.x = pow(v.x,3.0);
-        v.y = pow(v.y,3.0);
-        v.z = pow(v.z,3.0);
-        gl_FragColor = vec4(v,length(v));
+        gl_FragColor = vec4(pow(vscatter,vec3(2.2)),length(vscatter));
       }
     `,
     vert: `
       precision mediump float;
       uniform mat4 projection, view, model;
-      uniform vec3 eye;
+      uniform vec3 eye, sunpos;
       attribute vec3 position;
-      varying vec3 vpos;
-      varying float vdist;
+      varying vec3 vscatter, vpos, vray, vsun;
+      ${scatter}
       void main () {
-        vpos = position;
-        vdist = length(eye - vpos*0.25*${r});
+        vpos = position*${r};
+        vray = normalize(vpos - eye);
+        vec2 e = ray_sphere_intersect(eye,vray,${RO});
+        vsun = normalize(sunpos);
+        if (e.x > e.y) {
+          vscatter = vec3(0,0,0);
+        } else {
+          vec2 f = ray_sphere_intersect(eye,vray,${R});
+          e.y = min(e.y,f.x);
+          vscatter = in_scatter(eye,vray,e,vsun);
+        }
         gl_Position = projection * view * model * vec4(position,1);
       }
     `,
@@ -93,14 +95,18 @@ function scattering (regl) {
       }
     },
     depth: {
-      mask: false
+      mask: false,
+      enable: true
+    },
+    cull: {
+      enable: true
     }
   })
 }
 
 function earth (regl) {
   var model = []
-  var mesh = earthMesh()
+  var mesh = earthMesh(1)
   return regl({
     frag: `
       precision mediump float;
@@ -109,12 +115,10 @@ function earth (regl) {
       void main () {
         vec3 npos = normalize(vpos);
         float c = clamp(max(
-          dot(normalize(sunpos),npos) * 1.2,
+          dot(normalize(sunpos),npos),
           dot(vec3(-0.8,-0.8,-0.7),npos) * 0.05
         ), 0.0, 1.0);
-        gl_FragColor = vec4(vec3(0,0.5,1)*pow(c,1.2),1);
-        //float c = sin(vpos.x) + sin(vpos.y) + sin(vpos.z);
-        //gl_FragColor = vec4(c,c,c,1);
+        gl_FragColor = vec4(pow(vec3(0.3,0.7,1)*pow(c,0.5),vec3(2.2)),1);
       }
     `,
     vert: `
@@ -141,8 +145,12 @@ function earth (regl) {
   })
 }
 
+var cross = require('gl-vec3/cross')
+var dot = require('gl-vec3/dot')
+var sub = require('gl-vec3/subtract')
+
 function earthMesh () {
-  var mesh = sphereMesh(20, 1)
+  var mesh = sphereMesh(50, 1)
   var pts = mesh.positions
   for (var i = 0; i < pts.length; i++) {
     var p = pts[i]
@@ -152,6 +160,19 @@ function earthMesh () {
     pts[i][0] = pts[i][0]/1e6
     pts[i][1] = pts[i][1]/1e6
     pts[i][2] = pts[i][2]/1e6
+  }
+  var n = [], a = [], b = []
+  for (var i = 0; i < mesh.cells.length; i++) {
+    var c = mesh.cells[i]
+    cross(n,
+      sub(a,pts[c[1]],pts[c[2]]),
+      sub(b,pts[c[0]],pts[c[2]])
+    )
+    if (dot(n, pts[c[0]]) < 0) {
+      var x = c[0]
+      c[0] = c[1]
+      c[1] = x
+    }
   }
   return mesh
 }
