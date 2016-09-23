@@ -36,7 +36,7 @@ module.exports = function (regl, opts) {
 function scattering (regl) {
   var model = [], eyem = []
   var mesh = earthMesh()
-  var r = 1.02, inSteps = 10, outSteps = 10
+  var r = 1.01, inSteps = 10, outSteps = 10
   var R = 6.378137, RO = R*r
 
   return regl({
@@ -45,7 +45,7 @@ function scattering (regl) {
       varying vec3 vscatter, vpos, vray, vsun;
       uniform vec3 sunpos, eye;
       void main () {
-        gl_FragColor = vec4(pow(vscatter,vec3(2.2)),length(vscatter)*0.3);
+        gl_FragColor = vec4(pow(vscatter,vec3(2.2)),sqrt(length(vscatter)*0.4));
       }
     `,
     vert: `
@@ -56,7 +56,7 @@ function scattering (regl) {
       varying vec3 vscatter, vpos, vray, vsun;
       ${scatter}
       void main () {
-        vpos = position*${r};
+        vpos = position*${r.toPrecision(8)};
         vray = normalize(vpos - eye);
         vec2 e = ray_sphere_intersect(eye,vray,${RO});
         vsun = normalize(sunpos);
