@@ -13,7 +13,7 @@ const vec3  C_R = vec3( 0.3, 0.7, 1.0 );  // 1 / wavelength ^ 4
 const float G_M = -0.85;          // Mie g
 
 const float R_INNER = 6.378137;
-const float R = R_INNER * 1.02;
+const float R = R_INNER * 1.01;
 const float SCALE_H = 4.0 / (R-R_INNER);
 const float SCALE_L = 1.0 / (R-R_INNER);
 

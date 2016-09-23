@@ -23,6 +23,7 @@
     "gl-mat4": "^1.1.4",
     "gl-simplicial-complex": "^3.0.4",
     "gl-vec3": "^1.0.3",
+    "glsl-specular-beckmann": "^1.1.2",
     "glslify": "^5.0.2",
     "healpix": "^1.0.0",
     "idb-content-addressable-blob-store": "^1.1.1",

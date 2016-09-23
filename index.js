@@ -9,6 +9,10 @@ var sphereMesh = require('sphere-mesh')
 var mat4 = require('gl-mat4')
 var fs = require('fs')
 var scatter = fs.readFileSync(__dirname+'/scatter.glsl','utf8')
+var specular = ''
+  + fs.readFileSync(require.resolve('glsl-specular-beckmann/distribution.glsl'),'utf8')
+    .replace(/beckmannDistribution/g, 'distribution')
+  + fs.readFileSync(require.resolve('glsl-specular-beckmann/index.glsl'),'utf8')
 
 module.exports = function (regl, opts) {
   var draw = {
@@ -32,7 +36,7 @@ module.exports = function (regl, opts) {
 function scattering (regl) {
   var model = [], eyem = []
   var mesh = earthMesh()
-  var r = 1.04, inSteps = 10, outSteps = 10
+  var r = 1.02, inSteps = 10, outSteps = 10
   var R = 6.378137, RO = R*r
 
   return regl({
@@ -41,7 +45,7 @@ function scattering (regl) {
       varying vec3 vscatter, vpos, vray, vsun;
       uniform vec3 sunpos, eye;
       void main () {
-        gl_FragColor = vec4(pow(vscatter,vec3(2.2)),length(vscatter));
+        gl_FragColor = vec4(pow(vscatter,vec3(2.2)),length(vscatter)*0.3);
       }
     `,
     vert: `
@@ -111,14 +115,18 @@ function earth (regl) {
     frag: `
       precision mediump float;
       varying vec3 vpos;
-      uniform vec3 sunpos;
+      uniform vec3 sunpos, eye;
+      ${specular}
       void main () {
         vec3 npos = normalize(vpos);
+        vec3 vray = normalize(eye - vpos);
+        vec3 vsun = normalize(sunpos);
+        float spec = beckmannSpecular(vsun, vray, npos, 0.3)*0.1;
         float c = clamp(max(
           dot(normalize(sunpos),npos),
           dot(vec3(-0.8,-0.8,-0.7),npos) * 0.05
-        ), 0.0, 1.0);
-        gl_FragColor = vec4(pow(vec3(0.3,0.7,1)*pow(c,0.5),vec3(2.2)),1);
+        ), 0.0, 1.0)*2.2;
+        gl_FragColor = vec4(pow(vec3(0.3,0.7,1)*(pow(c,0.5)+spec),vec3(2.2)), 1);
       }
     `,
     vert: `
@@ -141,7 +149,15 @@ function earth (regl) {
       },
       sunpos: regl.prop('sunpos')
     },
-    elements: mesh.cells
+    elements: mesh.cells,
+    depth: {
+      enable: true,
+      mask: false
+    },
+    cull: {
+      enable: true,
+      face: 'front'
+    }
   })
 }
 
