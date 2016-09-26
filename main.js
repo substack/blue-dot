@@ -1,9 +1,9 @@
 var regl = require('regl')()
 var camera = require('regl-camera')(regl, {
   center: [0,0,0],
-  distance: 20,
-  maxDistance: 60,
-  minDistance: 8
+  distance: 3,
+  maxDistance: 20,
+  minDistance: 2
 })
 var Earth = require('./')
 var resl = require('resl')

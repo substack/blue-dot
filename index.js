@@ -7,7 +7,7 @@ var sphereMesh = require('icosphere')
 
 var mat4 = require('gl-mat4')
 var fs = require('fs')
-var scatter = fs.readFileSync(__dirname+'/scatter.glsl','utf8')
+var scatter = fs.readFileSync(require.resolve('glsl-atmosphere/index.glsl'),'utf8')
 var specular = ''
   + fs.readFileSync(require.resolve('glsl-specular-beckmann/distribution.glsl'),'utf8')
     .replace(/beckmannDistribution/g, 'distribution')
@@ -21,11 +21,11 @@ module.exports = function (regl, opts) {
   }
   return function () {
     regl.draw(function (context) {
-      var t = context.time*0.1, sunr = 10
+      var t = context.time*0.1, r = 10
       var sunpos = [
-        Math.sin(t)*sunr,
-        Math.sin(t*0.2)*0.05*sunr,
-        Math.cos(t)*sunr
+        Math.sin(t)*r,
+        Math.sin(t*0.2)*0.05*r,
+        Math.cos(t)*r
       ]
       draw.earth({ sunpos: sunpos })
       draw.scattering({ sunpos: sunpos })
@@ -36,16 +36,14 @@ module.exports = function (regl, opts) {
 function scattering (regl) {
   var model = [], eyem = []
   var mesh = earthMesh()
-  var r = 1.01, inSteps = 10, outSteps = 10
-  var R = 6.378137, RO = R*r
-
+  var r = 1.01
   return regl({
     frag: `
       precision mediump float;
-      varying vec3 vscatter, vpos, vray, vsun;
+      varying vec3 vscatter, vpos;
       uniform vec3 sunpos, eye;
       void main () {
-        gl_FragColor = vec4(pow(vscatter,vec3(2.2)),sqrt(length(vscatter)*0.4));
+        gl_FragColor = vec4(pow(vscatter,vec3(1.2)),sqrt(length(vscatter)*0.4));
       }
     `,
     vert: `
@@ -53,20 +51,16 @@ function scattering (regl) {
       uniform mat4 projection, view, model;
       uniform vec3 eye, sunpos;
       attribute vec3 position;
-      varying vec3 vscatter, vpos, vray, vsun;
+      varying vec3 vscatter, vpos;
       ${scatter}
       void main () {
-        vpos = position*${r.toPrecision(8)};
-        vray = normalize(vpos - eye);
-        vec2 e = ray_sphere_intersect(eye,vray,${RO});
-        vsun = normalize(sunpos);
-        if (e.x > e.y) {
-          vscatter = vec3(0,0,0);
-        } else {
-          vec2 f = ray_sphere_intersect(eye,vray,${R});
-          e.y = min(e.y,f.x);
-          vscatter = in_scatter(eye,vray,e,vsun);
-        }
+        vpos = position;
+        vscatter = atmosphere(
+          eye-vpos, vpos*6372e3, sunpos, 22.0,
+          6371e3, 6471e3,
+          0.5*vec3(5.5e-6,13.0e-6,22.4e-6),
+          21e-6, 8e3, 1.2e3, 0.758
+        );
         gl_Position = projection * view * model * vec4(position,1);
       }
     `,
@@ -143,7 +137,7 @@ function earth (regl, opts) {
         float c = clamp(max(
           dot(normalize(sunpos),npos),
           dot(vec3(-0.8,-0.8,-0.7),npos) * 0.002
-        ), 0.0, 1.0)*2.2;
+        ), 0.0, 1.0)*1.5;
         float lon = mod(atan(npos.x,npos.z)*${0.5/Math.PI},1.0);
         float lat = asin(-npos.y*0.79-0.02)*0.5+0.5;
         vec3 d = pow(texture2D(day,vec2(lon,lat)).rgb,vec3(0.8));
@@ -202,16 +196,5 @@ var dot = require('gl-vec3/dot')
 var sub = require('gl-vec3/subtract')
 
 function earthMesh () {
-  var mesh = sphereMesh(5)
-  var pts = mesh.positions
-  for (var i = 0; i < pts.length; i++) {
-    var p = pts[i]
-    var lon = Math.atan2(p[0], p[2]) * 180 / Math.PI
-    var lat = Math.asin(p[1]) * 180 / Math.PI
-    pts[i] = ecef(lat, lon)
-    pts[i][0] = pts[i][0]/1e6
-    pts[i][1] = pts[i][1]/1e6
-    pts[i][2] = pts[i][2]/1e6
-  }
-  return mesh
+  return sphereMesh(5)
 }
