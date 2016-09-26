@@ -43,7 +43,8 @@ function scattering (regl) {
       varying vec3 vscatter, vpos;
       uniform vec3 sunpos, eye;
       void main () {
-        gl_FragColor = vec4(pow(vscatter,vec3(1.2)),sqrt(length(vscatter)*0.4));
+        gl_FragColor = vec4(pow(vscatter*0.7,vec3(1.2)),
+          min(0.6,sqrt(length(vscatter)*0.4)));
       }
     `,
     vert: `
@@ -58,7 +59,7 @@ function scattering (regl) {
         vscatter = atmosphere(
           eye-vpos, vpos*6372e3, sunpos, 22.0,
           6371e3, 6471e3,
-          0.5*vec3(5.5e-6,13.0e-6,22.4e-6),
+          2.0*vec3(5.5e-6,13.0e-6,22.4e-6),
           21e-6, 8e3, 1.2e3, 0.758
         );
         gl_Position = projection * view * model * vec4(position,1);
